@@ -1,15 +1,24 @@
 const express = require('express');
 const path = require('path');
-const pool = require('./db');
+const db = require('./db');
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Izinkan dashboard dari origin lain (mis. Vite port 5173) membaca API
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // POST /api/readings - menerima data sensor (Bagian 3.2 & 3.3)
-app.post('/api/readings', async (req, res) => {
+app.post('/api/readings', (req, res) => {
   const { device_id, suhu, kelembapan } = req.body || {};
 
   if (typeof suhu !== 'number' || typeof kelembapan !== 'number') {
@@ -23,11 +32,13 @@ app.post('/api/readings', async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      'INSERT INTO readings (device_id, suhu, kelembapan) VALUES ($1, $2, $3) RETURNING *',
-      [device_id || 'GH-01', suhu, kelembapan]
-    );
-    res.status(201).json(result.rows[0]);
+    const info = db
+      .prepare('INSERT INTO readings (device_id, suhu, kelembapan) VALUES (?, ?, ?)')
+      .run(device_id || 'GH-01', suhu, kelembapan);
+    const row = db
+      .prepare('SELECT * FROM readings WHERE id = ?')
+      .get(info.lastInsertRowid);
+    res.status(201).json(row);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'gagal menyimpan data' });
@@ -35,12 +46,12 @@ app.post('/api/readings', async (req, res) => {
 });
 
 // GET /api/readings/latest - data terbaru untuk kartu nilai
-app.get('/api/readings/latest', async (req, res) => {
+app.get('/api/readings/latest', (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM readings ORDER BY id DESC LIMIT 1'
-    );
-    res.json(result.rows[0] || null);
+    const row = db
+      .prepare('SELECT * FROM readings ORDER BY id DESC LIMIT 1')
+      .get();
+    res.json(row || null);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'gagal mengambil data terbaru' });
@@ -48,15 +59,16 @@ app.get('/api/readings/latest', async (req, res) => {
 });
 
 // GET /api/stats - rata-rata, minimum, maksimum suhu & kelembapan
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT COUNT(*) AS total,
-             AVG(suhu) AS suhu_rata_rata, MIN(suhu) AS suhu_min, MAX(suhu) AS suhu_maks,
-             AVG(kelembapan) AS kelembapan_rata_rata, MIN(kelembapan) AS kelembapan_min, MAX(kelembapan) AS kelembapan_maks
-      FROM readings
-    `);
-    const r = result.rows[0];
+    const r = db
+      .prepare(
+        `SELECT COUNT(*) AS total,
+                AVG(suhu) AS suhu_rata_rata, MIN(suhu) AS suhu_min, MAX(suhu) AS suhu_maks,
+                AVG(kelembapan) AS kelembapan_rata_rata, MIN(kelembapan) AS kelembapan_min, MAX(kelembapan) AS kelembapan_maks
+         FROM readings`
+      )
+      .get();
     const angka = (v) => (v === null || v === undefined ? null : Math.round(Number(v) * 10) / 10);
     res.json({
       total_data: Number(r.total),
@@ -70,16 +82,15 @@ app.get('/api/stats', async (req, res) => {
 });
 
 // GET /api/readings?limit=20 - riwayat N data terakhir
-app.get('/api/readings', async (req, res) => {
+app.get('/api/readings', (req, res) => {
   let limit = parseInt(req.query.limit, 10);
   if (Number.isNaN(limit) || limit < 1) limit = 20;
   if (limit > 100) limit = 100;
   try {
-    const result = await pool.query(
-      'SELECT * FROM readings ORDER BY id DESC LIMIT $1',
-      [limit]
-    );
-    res.json(result.rows);
+    const rows = db
+      .prepare('SELECT * FROM readings ORDER BY id DESC LIMIT ?')
+      .all(limit);
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'gagal mengambil riwayat data' });

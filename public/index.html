@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring IoT Greenhouse</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Monitoring Greenhouse</h1>
+      <p class="subjudul">Sensor suhu &amp; kelembapan — perangkat GH-01</p>
+    </div>
+    <div class="status-perangkat">
+      <span id="badge-status" class="badge offline">Offline</span>
+      <span id="waktu-update" class="waktu-update">Belum ada data</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="kartu-baris">
+      <div id="kartu-suhu" class="kartu normal">
+        <h2>Suhu Terkini</h2>
+        <p class="nilai"><span id="suhu-terkini">-</span> °C</p>
+        <p id="status-suhu" class="status-teks">Normal</p>
+      </div>
+      <div class="kartu">
+        <h2>Kelembapan Terkini</h2>
+        <p class="nilai"><span id="kelembapan-terkini">-</span> %</p>
+        <p class="status-teks">Kelembapan relatif</p>
+      </div>
+      <div class="kartu">
+        <h2>Statistik (semua data)</h2>
+        <ul class="statistik">
+          <li>Suhu rata-rata: <strong id="stat-avg-suhu">-</strong> °C</li>
+          <li>Suhu min / maks: <strong id="stat-minmax-suhu">-</strong> °C</li>
+          <li>Kelembapan rata-rata: <strong id="stat-avg-kelembapan">-</strong> %</li>
+          <li>Kelembapan min / maks: <strong id="stat-minmax-kelembapan">-</strong> %</li>
+          <li>Total data: <strong id="stat-total">0</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Grafik 20 Data Terakhir</h2>
+      <canvas id="grafik-sensor" height="110"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2>Riwayat 10 Data Terakhir</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Perangkat</th>
+            <th>Suhu (°C)</th>
+            <th>Kelembapan (%)</th>
+          </tr>
+        </thead>
+        <tbody id="tabel-riwayat">
+          <tr><td colspan="4">Menunggu data...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

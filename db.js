@@ -1,28 +1,20 @@
+const Database = require('better-sqlite3');
+const path = require('path');
 
-const { Pool } = require('pg');
+// Database SQLite: tersimpan sebagai file data.db di folder proyek,
+// dibuat otomatis saat pertama kali server dijalankan.
+const db = new Database(path.join(__dirname, 'data.db'));
 
-const pool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  user: 'macosmojave',
-  password: '',
-  database: 'monitoring_suhu',
-});
-
-pool
-  .query(
-    `
+// Struktur tabel readings persis Bagian 3.1
+db.exec(`
   CREATE TABLE IF NOT EXISTS readings (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id TEXT NOT NULL,
     suhu REAL NOT NULL,
     kelembapan REAL NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )
-`,
-  )
-  .then(() => console.log('Tabel readings siap'))
-  .catch((err) => console.error('Gagal membuat tabel:', err.message));
+`);
+console.log('Tabel readings siap');
 
-module.exports = pool;
-
+module.exports = db;

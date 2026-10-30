@@ -1,5 +1,5 @@
 // simulator.js -> jalankan: node simulator.js
-const URL = 'http://localhost:3000/api/readings';
+const URL = 'https://lemuel-unsatisfiable-empathetically.ngrok-free.dev/api/readings';
 
 setInterval(async () => {
   const data = {
