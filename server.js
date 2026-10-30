@@ -4,6 +4,7 @@ const pool = require('./db');
 const app = express();
 
 app.use(express.json());
+app.use(express.static('public'));
 
 app.post('/api/readings', async (req, res) => {
   try {
@@ -12,7 +13,7 @@ app.post('/api/readings', async (req, res) => {
       'INSERT INTO readings (device_id, suhu, kelembapan) VALUES ($1, $2, $3) RETURNING *',
       [device_id, suhu, kelembapan],
     );
-    res.status(201).json('Data Tersimpan : ' + result.rows[0]);
+    res.status(201).json('Data Tersimpan');
   } catch (err) {
     console.error(err);
     res.status(500).json('Gagal menyimpan data');
@@ -20,7 +21,11 @@ app.post('/api/readings', async (req, res) => {
 });
 app.get('/api/readings', async (req, res) => {
   try {
-    const { limit } = req.body;
+    const parsed = parseInt(req.query.limit, 10);
+    const limit = Number.isNaN(parsed)
+      ? 50
+      : Math.min(Math.max(parsed, 1), 500);
+
     const result = await pool.query(
       'SELECT * FROM readings ORDER BY created_at DESC limit $1',
       [limit],
@@ -50,6 +55,20 @@ app.get('/api/stats', async (req, res) => {
     const result = await pool.query(
       'SELECT COUNT(*)::int AS total, AVG(suhu) AS avg_suhu, MIN(suhu) AS min_suhu, MAX(suhu) AS max_suhu,  AVG(kelembapan) AS avg_kelembapan, MIN(kelembapan) AS min_kelembapan, MAX(kelembapan) AS max_kelembapan FROM readings;',
     );
+    const r = result.rows[0];
+    res.status(200).json({
+      total: r.total,
+      suhu: {
+        avg: num(r.avg_suhu),
+        min: num(r.min_suhu),
+        max: num(r.max_suhu),
+      },
+      kelembapan: {
+        avg: num(r.avg_kelembapan),
+        min: num(r.min_kelembapan),
+        max: num(r.max_kelembapan),
+      },
+    });
     res.status(200).json(result.rows);
   } catch (err) {
     console.error(err);
