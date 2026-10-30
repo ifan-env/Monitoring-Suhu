@@ -4,80 +4,36 @@ const pool = require('./db');
 const app = express();
 
 app.use(express.json());
+
 app.post('/api/readings', async (req, res) => {
   try {
-    const { sensor, value } = req.body;
+    const { device_id, sensor, value } = req.body;
     const result = await pool.query(
-      'INSERT INTO sensor_readings (sensor,value) VALUES ($1, $2) RETURNING *',
-      [sensor, value],
+      'INSERT INTO monitoring_suhu (device_id, sensor, value) VALUES ($1, $2, $3) RETURNING *',
+      [device_id, sensor, value],
     );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json('Data Tersimpan : ' + result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json('Gagal menyimpan data');
   }
 });
 
-app.get('/api/readings', async (req, res) => {
+app.get('/api/readings/latest', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM sensor_readings ORDER BY created_at DESC',
-    );
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json('gagal mangambil data data');
-  }
-});
-
-// (C) DELETE /api/readings/:id — hapus data berdasarkan id
-app.delete('/api/readings/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      'DELETE FROM sensor_readings WHERE id = $1 RETURNING *',
-      [id],
+      'SELECT * FROM monitoring_suhu ORDER BY created_at DESC limit 1',
     );
     res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json('gagal menghapus data');
+    res.status(500).json('Data Tidak tersedia');
   }
 });
 
-app.put('/api/readings/:id', async (req, res) => {
-  try {
-    const { sensor, value } = req.body;
-    const { id } = req.params;
+app.get('/api/stats', async (req, res) => {});
 
-    const result = await pool.query(
-      'UPDATE sensor_readings SET sensor = $1, value = $2 WHERE id = $3 RETURNING *',
-      [sensor, value, id],
-    );
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json('gagagl update');
-  }
-});
-app.get('/api/readings/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      'SELECT * FROM sensor_readings WHERE id = $1 ',
-      [id],
-    );
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json('data tidak ditemukan');
-  }
-});
-
-const PORT = 5005;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server berjalan di :${PORT}`);
 });
-
