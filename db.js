@@ -1,4 +1,4 @@
-// cat > ~/Monitoring-Suhu/db.js <<'EnpOF'
+
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -25,4 +25,4 @@ pool
   .catch((err) => console.error('Gagal membuat tabel:', err.message));
 
 module.exports = pool;
-// EOF;
+
