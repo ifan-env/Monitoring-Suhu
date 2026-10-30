@@ -1,3 +1,4 @@
+cat > ~/Monitoring-Suhu/db.js <<'EOF'
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -21,3 +22,4 @@ pool.query(`
   .catch((err) => console.error('Gagal membuat tabel:', err.message));
 
 module.exports = pool;
+EOF
