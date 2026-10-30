@@ -13,19 +13,25 @@ app.post('/api/readings', async (req, res) => {
   const { device_id, suhu, kelembapan } = req.body || {};
 
   if (typeof suhu !== 'number' || typeof kelembapan !== 'number') {
-    return res.status(400).json({ error: 'suhu dan kelembapan harus berupa angka' });
+    return res
+      .status(400)
+      .json({ error: 'suhu dan kelembapan harus berupa angka' });
   }
   if (suhu < -40 || suhu > 80) {
-    return res.status(400).json({ error: 'suhu harus di antara -40 s.d. 80 derajat C' });
+    return res
+      .status(400)
+      .json({ error: 'suhu harus di antara -40 s.d. 80 derajat C' });
   }
   if (kelembapan < 0 || kelembapan > 100) {
-    return res.status(400).json({ error: 'kelembapan harus di antara 0 s.d. 100 persen' });
+    return res
+      .status(400)
+      .json({ error: 'kelembapan harus di antara 0 s.d. 100 persen' });
   }
 
   try {
     const result = await pool.query(
       'INSERT INTO readings (device_id, suhu, kelembapan) VALUES ($1, $2, $3) RETURNING *',
-      [device_id || 'GH-01', suhu, kelembapan]
+      [device_id || 'GH-01', suhu, kelembapan],
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -38,7 +44,7 @@ app.post('/api/readings', async (req, res) => {
 app.get('/api/readings/latest', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM readings ORDER BY id DESC LIMIT 1'
+      'SELECT * FROM readings ORDER BY id DESC LIMIT 1',
     );
     res.json(result.rows[0] || null);
   } catch (err) {
@@ -57,11 +63,20 @@ app.get('/api/stats', async (req, res) => {
       FROM readings
     `);
     const r = result.rows[0];
-    const angka = (v) => (v === null || v === undefined ? null : Math.round(Number(v) * 10) / 10);
+    const angka = (v) =>
+      v === null || v === undefined ? null : Math.round(Number(v) * 10) / 10;
     res.json({
       total_data: Number(r.total),
-      suhu: { rata_rata: angka(r.suhu_rata_rata), minimum: angka(r.suhu_min), maksimum: angka(r.suhu_maks) },
-      kelembapan: { rata_rata: angka(r.kelembapan_rata_rata), minimum: angka(r.kelembapan_min), maksimum: angka(r.kelembapan_maks) },
+      suhu: {
+        rata_rata: angka(r.suhu_rata_rata),
+        minimum: angka(r.suhu_min),
+        maksimum: angka(r.suhu_maks),
+      },
+      kelembapan: {
+        rata_rata: angka(r.kelembapan_rata_rata),
+        minimum: angka(r.kelembapan_min),
+        maksimum: angka(r.kelembapan_maks),
+      },
     });
   } catch (err) {
     console.error(err);
@@ -77,7 +92,7 @@ app.get('/api/readings', async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM readings ORDER BY id DESC LIMIT $1',
-      [limit]
+      [limit],
     );
     res.json(result.rows);
   } catch (err) {
